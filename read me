@@ -1,0 +1,6 @@
+# PriceCharting Proxy
+
+This is a simple proxy server to fetch and parse Pokémon card price data from PriceCharting and return it as JSON.
+
+Endpoint:
+`/pricecharting?url=https://www.pricecharting.com/...`
