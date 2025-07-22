@@ -1,0 +1,35 @@
+const express = require('express');
+const fetch = require('node-fetch');
+const cheerio = require('cheerio');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+
+app.get('/pricecharting', async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).json({ error: 'Missing URL' });
+
+  try {
+    const response = await fetch(url);
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const rows = $('table.price_summary tr');
+
+    const prices = {};
+    rows.each((i, row) => {
+      const label = $(row).find('td').first().text().trim();
+      const priceText = $(row).find('td').eq(1).text().trim().replace('$', '');
+      if (label && priceText) {
+        prices[label] = parseFloat(priceText);
+      }
+    });
+
+    res.json(prices);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
