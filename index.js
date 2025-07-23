@@ -17,7 +17,7 @@ app.get('/pricecharting', async (req, res) => {
 
     const prices = {};
     $('table.price_summary tr').each((_, row) => {
-      const label = $(row).find('td').eq(0).text().trim();
+      const label = $(row).find('td').eq(0).text().trim(); // now matches "Ungraded", "PSA 10", etc.
       const priceText = $(row).find('td').eq(1).text().trim();
       if (label && priceText && priceText.startsWith('$')) {
         prices[label] = parseFloat(priceText.replace('$', '').replace(',', ''));
