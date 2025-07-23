@@ -16,11 +16,11 @@ app.get('/pricecharting', async (req, res) => {
     const $ = cheerio.load(html);
 
     const prices = {};
-    $('table.price_summary tr').each((i, row) => {
-      const label = $(row).find('td').first().text().trim();
-      const value = $(row).find('td').eq(1).text().trim().replace('$', '');
-      if (label && value) {
-        prices[label] = parseFloat(value);
+    $('table.price_summary tr').each((_, row) => {
+      const label = $(row).find('td').eq(0).text().trim();
+      const priceText = $(row).find('td').eq(1).text().trim();
+      if (label && priceText && priceText.startsWith('$')) {
+        prices[label] = parseFloat(priceText.replace('$', '').replace(',', ''));
       }
     });
 
@@ -31,4 +31,4 @@ app.get('/pricecharting', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Proxy server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
