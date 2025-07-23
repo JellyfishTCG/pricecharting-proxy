@@ -19,7 +19,7 @@ app.get('/pricecharting', async (req, res) => {
 
     const prices = {};
 
-    // Custom grade mappings
+    // ✅ 1. Get main prices (static mapping)
     const gradeMap = {
       "used_price": "Ungraded",
       "complete_price": "Grade 7",
@@ -36,8 +36,8 @@ app.get('/pricecharting', async (req, res) => {
       }
     }
 
-    // Additional slab grades (optional)
-    const slabs = ["PSA_10", "PSA_9", "PSA_8", "CGC_10", "CGC_9_5", "BGS_10", "BGS_9_5"];
+    // ✅ 2. Get PSA/BGS/CGC slabs (optional)
+    const slabs = ["PSA_10", "PSA_9", "CGC_10", "CGC_9_5", "BGS_10", "BGS_9_5"];
     slabs.forEach(sl => {
       const raw = $(`#graded_price_${sl} .price.js-price`).text().trim().replace('$', '').replace(',', '');
       if (raw) {
@@ -46,6 +46,21 @@ app.get('/pricecharting', async (req, res) => {
       }
     });
 
+    // ✅ 3. Calculate average from completed auctions (Ungraded)
+    const ungradedPrices = [];
+    $('.completed-auctions-used table tr').each((_, row) => {
+      const priceText = $(row).find('.js-price').text().trim();
+      if (priceText.startsWith('$')) {
+        const num = parseFloat(priceText.replace('$', '').replace(',', ''));
+        if (!isNaN(num)) ungradedPrices.push(num);
+      }
+    });
+
+    if (ungradedPrices.length > 0) {
+      const avg = (ungradedPrices.reduce((a, b) => a + b, 0) / ungradedPrices.length).toFixed(2);
+      prices["Ungraded Avg Sold"] = parseFloat(avg);
+    }
+
     res.json(prices);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -53,4 +68,4 @@ app.get('/pricecharting', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Proxy server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
