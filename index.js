@@ -8,31 +8,47 @@ app.use(cors());
 
 app.get('/pricecharting', async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).json({ error: 'Missing URL' });
+  if (!url) {
+    return res.status(400).json({ error: 'Missing URL parameter' });
+  }
 
   try {
     const response = await fetch(url);
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    const prices = {
-      "Ungraded": parseFloat($('#used_price').text().replace('$', '').replace(',', '')) || null,
-      "New": parseFloat($('#new_price').text().replace('$', '').replace(',', '')) || null,
+    const prices = {};
+
+    // Custom grade mappings
+    const gradeMap = {
+      "used_price": "Ungraded",
+      "complete_price": "Grade 7",
+      "new_price": "Grade 8",
+      "graded_price": "Grade 9",
+      "box_only_price": "Grade 9.5",
+      "manual_only_price": "Grade 10"
     };
 
-    // Grab PSA grades
-    const grades = ["PSA_10", "PSA_9", "PSA_8", "BGS_10", "CGC_10"];
-    grades.forEach(grade => {
-      const id = `graded_price_${grade}`;
-      const priceText = $(`#${id}`).text().trim();
-      if (priceText && priceText.startsWith('$')) {
-        prices[grade.replace('_', ' ')] = parseFloat(priceText.replace('$', '').replace(',', ''));
+    for (const [id, label] of Object.entries(gradeMap)) {
+      const value = $(`#${id} .price.js-price`).text().trim().replace('$', '').replace(',', '');
+      if (value) {
+        prices[label] = parseFloat(value);
+      }
+    }
+
+    // Additional slab grades (optional)
+    const slabs = ["PSA_10", "PSA_9", "PSA_8", "CGC_10", "CGC_9_5", "BGS_10", "BGS_9_5"];
+    slabs.forEach(sl => {
+      const raw = $(`#graded_price_${sl} .price.js-price`).text().trim().replace('$', '').replace(',', '');
+      if (raw) {
+        const label = sl.replace('_', ' ').replace('_', '.');
+        prices[label] = parseFloat(raw);
       }
     });
 
     res.json(prices);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
